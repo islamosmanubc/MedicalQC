@@ -1,0 +1,3 @@
+tracking_uri: ${oc.env:MLFLOW_TRACKING_URI,./mlruns}
+experiment_name: medicalqc
+run_name: ${now:%Y-%m-%d_%H-%M-%S}

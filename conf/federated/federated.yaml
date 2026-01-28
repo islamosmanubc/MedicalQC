@@ -1,0 +1,4 @@
+num_clients: 3
+rounds: 2
+local_epochs: 1
+holdout_clients: [2]

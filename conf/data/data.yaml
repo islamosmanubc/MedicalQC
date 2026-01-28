@@ -1,0 +1,14 @@
+dataset_root: ${oc.env:DATA_ROOT,./data}
+dataset_type: toy
+num_hospitals: 3
+studies_per_hospital: 4
+slices_per_study: 8
+image_size: 64
+seed: 7
+num_workers: 0
+pin_memory: true
+sampling_max_slices: null
+sampling_strategy: uniform
+ct_window_level: null
+ct_window_width: null
+mri_norm: true

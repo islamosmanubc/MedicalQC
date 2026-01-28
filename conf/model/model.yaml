@@ -1,0 +1,21 @@
+encoder_name: swin_tiny_patch4_window7_224
+pretrained: false
+in_channels: 1
+embed_dim: 64
+lora: null
+spectral:
+  out_dim: 16
+  mode: radial
+  target_size: 64
+  radial_bins: null
+  fft_grid: 16
+  log_scale: true
+fusion_mode: concat_mlp
+fusion_dim: 32
+attn_hidden: 32
+dropout: 0.1
+uncertainty_mode: none
+return_ci: false
+expected_modality: null
+freeze_backbone: false
+train_adapters_only: false
