@@ -10,8 +10,6 @@ __pycache__/
 *.npy
 *.npz
 *.png
-*.jpg
-*.jpeg
 *.tif
 *.tiff
 *.dcm
