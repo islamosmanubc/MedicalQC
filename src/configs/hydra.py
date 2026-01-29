@@ -4,7 +4,16 @@ from __future__ import annotations
 
 from hydra.core.config_store import ConfigStore
 
-from src.configs.schema import AppConfig, DataConfig, EvalConfig, FederatedConfig, LoggingConfig, MlflowConfig, ModelConfig, TrainConfig
+from src.configs.schema import (
+    AppConfig,
+    DataConfig,
+    EvalConfig,
+    FederatedConfig,
+    LoggingConfig,
+    MlflowConfig,
+    ModelConfig,
+    TrainConfig,
+)
 
 
 def register_configs() -> None:

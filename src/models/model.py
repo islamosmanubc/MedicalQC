@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
-
 import torch
 from torch import nn
 
@@ -23,7 +21,9 @@ class MILAttention(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-    def forward(self, x: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, x: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
         # x: [B, S, D]
         weights = self.attn(x)  # [B, S, 1]
         if mask is not None:
@@ -49,10 +49,14 @@ class SpectralMILModel(nn.Module):
         self.encoder = encoder
         self.spectral = SpectralEncoder(spectral_cfg)
         self.mil = MILAttention(encoder.out_dim, mil_hidden, dropout)
-        self.fusion = Fusion(encoder.out_dim, spectral_cfg.out_dim, fusion_dim, fusion_mode, dropout)
+        self.fusion = Fusion(
+            encoder.out_dim, spectral_cfg.out_dim, fusion_dim, fusion_mode, dropout
+        )
         self.head = nn.Linear(fusion_dim, 1)
 
-    def forward(self, slices: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> Dict[str, torch.Tensor]:
+    def forward(
+        self, slices: torch.Tensor, attention_mask: torch.Tensor | None = None
+    ) -> dict[str, torch.Tensor]:
         if slices.dim() != 5:
             raise ValueError("Expected slices to be [B, S, C, H, W]")
         b, s, c, h, w = slices.shape

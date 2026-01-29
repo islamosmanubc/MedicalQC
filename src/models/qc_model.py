@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import torch
 from torch import nn
 
-from src.models.lora import LoraConfig, load_private_state_dict, private_state_dict, shared_state_dict
+from src.models.lora import (
+    LoraConfig,
+    load_private_state_dict,
+    private_state_dict,
+    shared_state_dict,
+)
 from src.models.mil import AttentionMILPool
 from src.models.spectral import Fusion, SpectralConfig, SpectralEncoder
 from src.models.swin_encoder import SwinEncoder
@@ -21,7 +25,7 @@ class QCModelConfig:
     pretrained: bool = False
     in_channels: int = 1
     embed_dim: int = 768
-    lora: Optional[LoraConfig] = None
+    lora: LoraConfig | None = None
     spectral: SpectralConfig = SpectralConfig()
     fusion_mode: str = "concat_mlp"
     fusion_dim: int = 256
@@ -29,7 +33,7 @@ class QCModelConfig:
     dropout: float = 0.1
     uncertainty_mode: str = "none"  # none | evidential
     return_ci: bool = False
-    expected_modality: Optional[str] = None  # CT | MRI | None
+    expected_modality: str | None = None  # CT | MRI | None
     freeze_backbone: bool = False
     train_adapters_only: bool = False
 
@@ -58,12 +62,22 @@ class QCFederatedMILModel(nn.Module):
         )
         self.spectral = SpectralEncoder(cfg.spectral)
         self.mil = AttentionMILPool(cfg.embed_dim, cfg.attn_hidden, cfg.dropout)
-        self.fusion = Fusion(cfg.embed_dim, cfg.spectral.out_dim, cfg.fusion_dim, cfg.fusion_mode, cfg.dropout)
+        self.fusion = Fusion(
+            cfg.embed_dim,
+            cfg.spectral.out_dim,
+            cfg.fusion_dim,
+            cfg.fusion_mode,
+            cfg.dropout,
+        )
         self.head = nn.Linear(cfg.fusion_dim, 1)
 
         if cfg.uncertainty_mode == "evidential":
             self.uncertainty_head = EvidentialBinaryHead(
-                EvidentialConfig(in_dim=cfg.fusion_dim, hidden_dim=cfg.attn_hidden, dropout=cfg.dropout)
+                EvidentialConfig(
+                    in_dim=cfg.fusion_dim,
+                    hidden_dim=cfg.attn_hidden,
+                    dropout=cfg.dropout,
+                )
             )
         else:
             self.uncertainty_head = None
@@ -75,7 +89,7 @@ class QCFederatedMILModel(nn.Module):
         if cfg.train_adapters_only:
             self._freeze_all_except_lora()
 
-    def forward(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+    def forward(self, batch: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
         slices = batch["slices"]
         attention_mask = batch.get("attention_mask")
         if slices.dim() != 5:
@@ -123,19 +137,19 @@ class QCFederatedMILModel(nn.Module):
             "attention_weights": attn_weights,
         }
 
-    def shared_state_dict(self) -> Dict[str, torch.Tensor]:
+    def shared_state_dict(self) -> dict[str, torch.Tensor]:
         return shared_state_dict(self.state_dict())
 
-    def private_state_dict(self) -> Dict[str, torch.Tensor]:
+    def private_state_dict(self) -> dict[str, torch.Tensor]:
         return private_state_dict(self.state_dict())
 
-    def load_shared_state_dict(self, state: Dict[str, torch.Tensor]) -> None:
+    def load_shared_state_dict(self, state: dict[str, torch.Tensor]) -> None:
         for key in state:
             if key.endswith("lora_A") or key.endswith("lora_B"):
                 raise ValueError("Shared state dict contains LoRA parameters")
         self.load_state_dict(state, strict=False)
 
-    def load_private_state_dict(self, lora_state: Dict[str, torch.Tensor]) -> None:
+    def load_private_state_dict(self, lora_state: dict[str, torch.Tensor]) -> None:
         load_private_state_dict(self, lora_state)
 
     def _freeze_all_except_lora(self) -> None:

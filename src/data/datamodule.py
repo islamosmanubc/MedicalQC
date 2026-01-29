@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from torch.utils.data import DataLoader
 
-from src.data.datasets import PreprocessConfig, SamplingConfig, StudyFolderDataset, ToyStudyDataset, collate_mil
+from src.data.datasets import (
+    PreprocessConfig,
+    SamplingConfig,
+    StudyFolderDataset,
+    ToyStudyDataset,
+    collate_mil,
+)
 from src.data.samplers import FederatedClientSampler
 
 
@@ -23,7 +28,7 @@ class LoaderConfig:
 
 @dataclass(frozen=True)
 class DataConfig:
-    root: Optional[str] = None
+    root: str | None = None
     backend: str = "folder"  # folder | toy
     preprocess: PreprocessConfig = PreprocessConfig()
     sampling: SamplingConfig = SamplingConfig()

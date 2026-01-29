@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
 
 import torch
 from torch import nn
@@ -31,10 +30,10 @@ class CentralConfig:
 def train_central(
     model: nn.Module,
     train_loader: DataLoader,
-    holdout_loaders: Dict[str, DataLoader],
+    holdout_loaders: dict[str, DataLoader],
     cfg: CentralConfig,
-) -> List[Dict[str, float]]:
-    history: List[Dict[str, float]] = []
+) -> list[dict[str, float]]:
+    history: list[dict[str, float]] = []
     device = torch.device(cfg.device)
     model.to(device)
     optimizer = torch.optim.AdamW(
@@ -80,7 +79,7 @@ def train_central(
         history.append(metrics)
 
     # plot metric curves
-    keys = [k for k in history[-1].keys() if k not in {"epoch"}]
+    keys = [k for k in history[-1] if k not in {"epoch"}]
     plot_path = Path(cfg.output_dir) / "central_metrics.png"
     plot_path.parent.mkdir(parents=True, exist_ok=True)
     plot_metric_curves(history, keys, plot_path)
@@ -89,8 +88,10 @@ def train_central(
     return history
 
 
-def _move_batch(batch: Dict[str, torch.Tensor], device: torch.device) -> Dict[str, torch.Tensor]:
-    moved: Dict[str, torch.Tensor] = {}
+def _move_batch(
+    batch: dict[str, torch.Tensor], device: torch.device
+) -> dict[str, torch.Tensor]:
+    moved: dict[str, torch.Tensor] = {}
     for key, value in batch.items():
         if torch.is_tensor(value):
             moved[key] = value.to(device)

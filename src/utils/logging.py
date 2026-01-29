@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 
 def configure_logging(level: str) -> None:
@@ -14,9 +13,13 @@ def configure_logging(level: str) -> None:
     logging.getLogger().addFilter(_ContextFilter())
 
 
-def get_logger(name: str, rank: Optional[int] = None, client_id: Optional[str] = None) -> logging.LoggerAdapter:
+def get_logger(
+    name: str, rank: int | None = None, client_id: str | None = None
+) -> logging.LoggerAdapter:
     base = logging.getLogger(name)
-    return logging.LoggerAdapter(base, {"rank": rank if rank is not None else 0, "client_id": client_id or "-"})
+    return logging.LoggerAdapter(
+        base, {"rank": rank if rank is not None else 0, "client_id": client_id or "-"}
+    )
 
 
 class _ContextFilter(logging.Filter):

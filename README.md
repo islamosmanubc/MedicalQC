@@ -146,6 +146,10 @@ make test
 ```
 CI: GitHub Actions runs `ruff`, `black --check`, `mypy`, and `pytest`.
 
+**Troubleshooting pre-commit on Windows**
+- Ensure Git is on PATH.
+- If hooks behave unexpectedly, reset hook envs: `python -m pre_commit clean`.
+
 ## How to reproduce main results
 Checklist:
 1) Generate toy data (optional; toy dataset is built-in).

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
+from contextlib import suppress
 from typing import Any
 
 import torch
 from omegaconf import OmegaConf
 
-from src.configs.schema import AppConfig
 from src.configs.hydra import register_configs
+from src.configs.schema import AppConfig
 from src.utils.seed import set_global_seed
 
 
@@ -36,10 +37,8 @@ def setup_runtime(cfg: AppConfig) -> None:
     """Set seeds and deterministic flags."""
     set_global_seed(cfg.train.seed, cfg.train.deterministic)
     if cfg.train.deterministic:
-        try:
+        with suppress(Exception):
             torch.use_deterministic_algorithms(True)
-        except Exception:
-            pass
 
 
 def log_config(logger: logging.Logger, cfg: AppConfig) -> None:

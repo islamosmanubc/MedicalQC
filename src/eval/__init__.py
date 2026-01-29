@@ -4,8 +4,8 @@ from src.eval.evaluator import EvalConfig, evaluate_model
 from src.eval.metrics import (
     auprc,
     auroc,
-    confusion_matrix,
     compute_metrics,
+    confusion_matrix,
     pr_curve,
     roc_curve,
     sensitivity_at_specificity,

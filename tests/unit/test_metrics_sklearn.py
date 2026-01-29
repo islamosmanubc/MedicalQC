@@ -6,7 +6,12 @@ except Exception:  # pragma: no cover
     average_precision_score = None
     roc_auc_score = None
 
-from src.eval.metrics import auprc, auroc, sensitivity_at_specificity, specificity_at_sensitivity
+from src.eval.metrics import (
+    auprc,
+    auroc,
+    sensitivity_at_specificity,
+    specificity_at_sensitivity,
+)
 
 
 def test_metrics_vs_sklearn():

@@ -21,6 +21,8 @@ def count_trainable_params(model: nn.Module) -> int:
 def test_lora_injection_increases_params():
     model = TinyBlock()
     before = count_trainable_params(model)
-    inject_lora(model, LoraConfig(r=2, alpha=4.0, dropout=0.0, target_modules=("qkv", "proj")))
+    inject_lora(
+        model, LoraConfig(r=2, alpha=4.0, dropout=0.0, target_modules=("qkv", "proj"))
+    )
     after = count_trainable_params(model)
     assert after > before

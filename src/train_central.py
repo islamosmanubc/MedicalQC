@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List
 
 import hydra
 import torch
@@ -11,12 +10,19 @@ from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Subset
 
 from src.configs.schema import AppConfig
-from src.data.datamodule import DataConfig as DMDataConfig, LoaderConfig, build_dataset
+from src.data.datamodule import DataConfig as DMDataConfig
+from src.data.datamodule import LoaderConfig, build_dataset
 from src.data.datasets import PreprocessConfig, SamplingConfig, collate_mil
-from src.models.qc_model import QCFederatedMILModel
 from src.eval.evaluator import EvalConfig as EvalRunConfig
+from src.models.qc_model import QCFederatedMILModel
 from src.train.central_trainer import CentralConfig, train_central
-from src.utils.config import init_hydra, log_config, resolve_config, setup_runtime, validate_config
+from src.utils.config import (
+    init_hydra,
+    log_config,
+    resolve_config,
+    setup_runtime,
+    validate_config,
+)
 from src.utils.io import ensure_dir
 from src.utils.logging import configure_logging, get_logger
 from src.utils.mlflow_utils import (
@@ -72,9 +78,13 @@ def main(cfg: DictConfig) -> None:
 
     dataset = build_dataset(data_cfg)
     hospital_map = _build_hospital_map(dataset)
-    holdout_ids = _resolve_holdout_ids(app_cfg.federated.holdout_clients, list(hospital_map.keys()))
+    holdout_ids = _resolve_holdout_ids(
+        app_cfg.federated.holdout_clients, list(hospital_map.keys())
+    )
 
-    train_indices = [i for h, idxs in hospital_map.items() if h not in holdout_ids for i in idxs]
+    train_indices = [
+        i for h, idxs in hospital_map.items() if h not in holdout_ids for i in idxs
+    ]
     train_loader = DataLoader(
         Subset(dataset, train_indices),
         batch_size=loader_cfg.batch_size,
@@ -84,7 +94,7 @@ def main(cfg: DictConfig) -> None:
         collate_fn=collate_mil,
     )
 
-    holdout_loaders: Dict[str, DataLoader] = {}
+    holdout_loaders: dict[str, DataLoader] = {}
     for hid in holdout_ids:
         holdout_loaders[hid] = DataLoader(
             Subset(dataset, hospital_map[hid]),
@@ -97,7 +107,11 @@ def main(cfg: DictConfig) -> None:
 
     model = QCFederatedMILModel(app_cfg.model.to_qc_config()).to(device)
 
-    start_run(app_cfg.mlflow.tracking_uri, app_cfg.mlflow.experiment_name, app_cfg.mlflow.run_name)
+    start_run(
+        app_cfg.mlflow.tracking_uri,
+        app_cfg.mlflow.experiment_name,
+        app_cfg.mlflow.run_name,
+    )
     output_dir = ensure_dir(Path(app_cfg.output_dir) / "artifacts")
     resolved = resolve_config(app_cfg)
     log_params_recursive(resolved)
@@ -131,10 +145,10 @@ def main(cfg: DictConfig) -> None:
     end_run()
 
 
-def _build_hospital_map(dataset) -> Dict[str, List[int]]:
+def _build_hospital_map(dataset) -> dict[str, list[int]]:
     if hasattr(dataset, "hospital_to_indices"):
         return dataset.hospital_to_indices
-    mapping: Dict[str, List[int]] = {}
+    mapping: dict[str, list[int]] = {}
     if hasattr(dataset, "records"):
         for idx, rec in enumerate(dataset.records):
             hid = rec["hospital_id"] if isinstance(rec, dict) else rec.hospital_id
@@ -142,8 +156,8 @@ def _build_hospital_map(dataset) -> Dict[str, List[int]]:
     return mapping
 
 
-def _resolve_holdout_ids(holdout, hospital_ids: List[str]) -> List[str]:
-    resolved: List[str] = []
+def _resolve_holdout_ids(holdout, hospital_ids: list[str]) -> list[str]:
+    resolved: list[str] = []
     for item in holdout:
         if isinstance(item, int):
             resolved.append(f"hospital_{item:03d}")

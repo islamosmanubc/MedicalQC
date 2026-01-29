@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 @dataclass(frozen=True)
@@ -33,7 +32,7 @@ class EvidentialBinaryHead(nn.Module):
             nn.Linear(cfg.hidden_dim, 2),
         )
 
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         evidence = F.softplus(self.net(x))
         alpha = evidence[:, 0] + 1.0
         beta = evidence[:, 1] + 1.0
@@ -55,7 +54,9 @@ class TemperatureScaler(nn.Module):
         super().__init__()
         if init_temp <= 0:
             raise ValueError("init_temp must be > 0")
-        self.log_temp = nn.Parameter(torch.log(torch.tensor(init_temp, dtype=torch.float32)))
+        self.log_temp = nn.Parameter(
+            torch.log(torch.tensor(init_temp, dtype=torch.float32))
+        )
 
     @property
     def temperature(self) -> torch.Tensor:
@@ -64,7 +65,9 @@ class TemperatureScaler(nn.Module):
     def forward(self, logits: torch.Tensor) -> torch.Tensor:
         return logits / self.temperature
 
-    def fit(self, logits: torch.Tensor, labels: torch.Tensor, max_iter: int = 50) -> float:
+    def fit(
+        self, logits: torch.Tensor, labels: torch.Tensor, max_iter: int = 50
+    ) -> float:
         """Optimize temperature on validation set. Returns final NLL."""
         if logits.ndim != 1:
             logits = logits.view(-1)
@@ -98,7 +101,7 @@ def mc_dropout_predict(
     inputs: torch.Tensor,
     forward_fn,
     passes: int = 10,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Run MC Dropout to estimate mean probability and uncertainty variance."""
     if passes <= 1:
         raise ValueError("passes must be > 1")
@@ -133,7 +136,7 @@ def expected_calibration_error(
 
 def reliability_diagram(
     y_true: torch.Tensor, y_prob: torch.Tensor, n_bins: int = 10
-) -> Dict[str, list]:
+) -> dict[str, list]:
     y_true = y_true.float().view(-1)
     y_prob = y_prob.view(-1)
     bins = torch.linspace(0.0, 1.0, n_bins + 1, device=y_prob.device)
@@ -168,5 +171,7 @@ def decision_policy(
         raise ValueError("t_u must be >= 0")
     decision = torch.zeros_like(p_fail, dtype=torch.long)
     decision = torch.where(u >= t_u, torch.tensor(2, device=p_fail.device), decision)
-    decision = torch.where((u < t_u) & (p_fail >= t_fail), torch.tensor(1, device=p_fail.device), decision)
+    decision = torch.where(
+        (u < t_u) & (p_fail >= t_fail), torch.tensor(1, device=p_fail.device), decision
+    )
     return decision

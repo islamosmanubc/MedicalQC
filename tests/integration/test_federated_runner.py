@@ -2,10 +2,16 @@ import torch
 from torch.utils.data import DataLoader, Subset
 
 from src.data.datasets import ToyStudyDataset, collate_mil
-from src.federated import FedAvg, FederatedClient, FederatedServer, RunnerConfig, run_federated
+from src.federated import (
+    FedAvg,
+    FederatedClient,
+    FederatedServer,
+    RunnerConfig,
+    run_federated,
+)
 from src.federated.client import ClientConfig
 from src.models.lora import LoraConfig
-from src.models.qc_model import QCModelConfig, QCFederatedMILModel
+from src.models.qc_model import QCFederatedMILModel, QCModelConfig
 from src.models.spectral import SpectralConfig
 
 
@@ -26,7 +32,9 @@ def test_federated_runner_loss_decreases(tmp_path):
     loaders = {}
     for hid, idxs in hospital_indices.items():
         subset = Subset(dataset, idxs)
-        loaders[hid] = DataLoader(subset, batch_size=2, shuffle=True, collate_fn=collate_mil)
+        loaders[hid] = DataLoader(
+            subset, batch_size=2, shuffle=True, collate_fn=collate_mil
+        )
 
     cfg = QCModelConfig(
         encoder_name="swin_tiny_patch4_window7_224",

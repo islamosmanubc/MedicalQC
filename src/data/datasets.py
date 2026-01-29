@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -16,14 +17,14 @@ from torch.utils.data import Dataset
 
 @dataclass(frozen=True)
 class PreprocessConfig:
-    ct_window_level: Optional[float] = None
-    ct_window_width: Optional[float] = None
+    ct_window_level: float | None = None
+    ct_window_width: float | None = None
     mri_norm: bool = True
 
 
 @dataclass(frozen=True)
 class SamplingConfig:
-    max_slices: Optional[int] = None
+    max_slices: int | None = None
     strategy: str = "uniform"  # uniform | center | random
 
 
@@ -32,18 +33,18 @@ class StudyRecord:
     hospital_id: str
     study_id: str
     study_path: Path
-    meta: Dict[str, Any]
+    meta: dict[str, Any]
 
 
-class StudyFolderDataset(Dataset[Dict[str, Any]]):
+class StudyFolderDataset(Dataset[dict[str, Any]]):
     """Study folder dataset: root/hospital_x/study_y/*"""
 
     def __init__(
         self,
         root: str | Path,
-        hospitals: Optional[Iterable[str]] = None,
-        preprocess: Optional[PreprocessConfig] = None,
-        sampling: Optional[SamplingConfig] = None,
+        hospitals: Iterable[str] | None = None,
+        preprocess: PreprocessConfig | None = None,
+        sampling: SamplingConfig | None = None,
         seed: int = 0,
     ) -> None:
         self.root = Path(root)
@@ -51,13 +52,13 @@ class StudyFolderDataset(Dataset[Dict[str, Any]]):
         self.preprocess = preprocess or PreprocessConfig()
         self.sampling = sampling or SamplingConfig()
         self.seed = seed
-        self.records: List[StudyRecord] = self._index_studies()
+        self.records: list[StudyRecord] = self._index_studies()
         self.hospital_to_indices = self._build_hospital_index()
 
     def __len__(self) -> int:
         return len(self.records)
 
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         record = self.records[idx]
         slice_paths = _list_slices(record.study_path)
         slice_paths = _sample_slices(
@@ -79,13 +80,13 @@ class StudyFolderDataset(Dataset[Dict[str, Any]]):
             "meta": record.meta,
         }
 
-    def _index_studies(self) -> List[StudyRecord]:
+    def _index_studies(self) -> list[StudyRecord]:
         if not self.root.exists():
             raise FileNotFoundError(f"Dataset root not found: {self.root}")
         hospitals = [p for p in self.root.iterdir() if p.is_dir()]
         if self.hospitals is not None:
             hospitals = [p for p in hospitals if p.name in set(self.hospitals)]
-        records: List[StudyRecord] = []
+        records: list[StudyRecord] = []
         for hospital in sorted(hospitals, key=lambda p: p.name):
             for study in sorted(hospital.iterdir(), key=lambda p: p.name):
                 if not study.is_dir():
@@ -104,14 +105,14 @@ class StudyFolderDataset(Dataset[Dict[str, Any]]):
                 )
         return records
 
-    def _build_hospital_index(self) -> Dict[str, List[int]]:
-        mapping: Dict[str, List[int]] = {}
+    def _build_hospital_index(self) -> dict[str, list[int]]:
+        mapping: dict[str, list[int]] = {}
         for idx, record in enumerate(self.records):
             mapping.setdefault(record.hospital_id, []).append(idx)
         return mapping
 
 
-class ToyStudyDataset(Dataset[Dict[str, Any]]):
+class ToyStudyDataset(Dataset[dict[str, Any]]):
     """Synthetic dataset with domain styles and artifacts for tests."""
 
     def __init__(
@@ -132,10 +133,12 @@ class ToyStudyDataset(Dataset[Dict[str, Any]]):
     def __len__(self) -> int:
         return len(self.records)
 
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         record = self.records[idx]
         rng = np.random.default_rng(self.seed + idx)
-        base = rng.normal(0.5, 0.15, size=(self.slices_per_study, self.image_size, self.image_size))
+        base = rng.normal(
+            0.5, 0.15, size=(self.slices_per_study, self.image_size, self.image_size)
+        )
         base = np.clip(base, 0.0, 1.0)
         base = _apply_domain_style(base, record["hospital_id"], self.seed)
         # Embed a weak label signal for learnability
@@ -151,8 +154,8 @@ class ToyStudyDataset(Dataset[Dict[str, Any]]):
             "meta": record["meta"],
         }
 
-    def _build_records(self) -> List[Dict[str, Any]]:
-        records: List[Dict[str, Any]] = []
+    def _build_records(self) -> list[dict[str, Any]]:
+        records: list[dict[str, Any]] = []
         for h in range(self.num_hospitals):
             hospital_id = f"hospital_{h:03d}"
             for s in range(self.studies_per_hospital):
@@ -175,12 +178,14 @@ class ToyStudyDataset(Dataset[Dict[str, Any]]):
         return records
 
 
-def collate_mil(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
+def collate_mil(batch: list[dict[str, Any]]) -> dict[str, Any]:
     """Pad variable-length slice stacks and create attention mask."""
     batch_size = len(batch)
     max_slices = max(item["slices"].shape[0] for item in batch)
     c, h, w = batch[0]["slices"].shape[1:]
-    padded = torch.zeros((batch_size, max_slices, c, h, w), dtype=batch[0]["slices"].dtype)
+    padded = torch.zeros(
+        (batch_size, max_slices, c, h, w), dtype=batch[0]["slices"].dtype
+    )
     mask = torch.zeros((batch_size, max_slices), dtype=torch.bool)
     for i, item in enumerate(batch):
         s = item["slices"].shape[0]
@@ -196,7 +201,7 @@ def collate_mil(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
-def _list_slices(study_path: Path) -> List[Path]:
+def _list_slices(study_path: Path) -> list[Path]:
     slice_paths = sorted(
         [p for p in study_path.iterdir() if p.suffix.lower() in {".npy", ".png"}],
         key=lambda p: p.name,
@@ -207,12 +212,12 @@ def _list_slices(study_path: Path) -> List[Path]:
 
 
 def _sample_slices(
-    paths: List[Path],
+    paths: list[Path],
     study_id: str,
-    max_slices: Optional[int],
+    max_slices: int | None,
     strategy: str,
     seed: int,
-) -> List[Path]:
+) -> list[Path]:
     if max_slices is None or len(paths) <= max_slices:
         return paths
     if strategy == "center":
@@ -244,10 +249,14 @@ def _load_slice(path: Path) -> np.ndarray:
 
 
 def _apply_preprocess(
-    img: np.ndarray, meta: Dict[str, Any], cfg: PreprocessConfig
+    img: np.ndarray, meta: dict[str, Any], cfg: PreprocessConfig
 ) -> np.ndarray:
     modality = str(meta.get("modality", "")).upper()
-    if modality == "CT" and cfg.ct_window_level is not None and cfg.ct_window_width is not None:
+    if (
+        modality == "CT"
+        and cfg.ct_window_level is not None
+        and cfg.ct_window_width is not None
+    ):
         low = cfg.ct_window_level - cfg.ct_window_width / 2
         high = cfg.ct_window_level + cfg.ct_window_width / 2
         img = np.clip(img, low, high)

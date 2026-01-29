@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Dict, Iterable, Tuple
 
 import torch
 from torch import nn
@@ -14,7 +14,7 @@ class LoraConfig:
     r: int = 8
     alpha: float = 16.0
     dropout: float = 0.05
-    target_modules: Tuple[str, ...] = ("qkv", "proj", "fc1", "fc2")
+    target_modules: tuple[str, ...] = ("qkv", "proj", "fc1", "fc2")
 
     def validate(self) -> None:
         if self.r <= 0:
@@ -59,23 +59,27 @@ def inject_lora(module: nn.Module, config: LoraConfig) -> nn.Module:
     config.validate()
     for name, child in list(module.named_children()):
         if isinstance(child, nn.Linear) and _matches(name, config.target_modules):
-            setattr(module, name, LoRALinear(child, config.r, config.alpha, config.dropout))
+            setattr(
+                module, name, LoRALinear(child, config.r, config.alpha, config.dropout)
+            )
         else:
             inject_lora(child, config)
     return module
 
 
-def shared_state_dict(state_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+def shared_state_dict(state_dict: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     """Return only shared weights (exclude LoRA parameters)."""
     return {k: v for k, v in state_dict.items() if not _is_lora_key(k)}
 
 
-def private_state_dict(state_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
+def private_state_dict(state_dict: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     """Return only private LoRA weights."""
     return {k: v for k, v in state_dict.items() if _is_lora_key(k)}
 
 
-def load_private_state_dict(model: nn.Module, lora_state: Dict[str, torch.Tensor]) -> None:
+def load_private_state_dict(
+    model: nn.Module, lora_state: dict[str, torch.Tensor]
+) -> None:
     """Load LoRA-only state into model."""
     missing, unexpected = model.load_state_dict(lora_state, strict=False)
     if unexpected:

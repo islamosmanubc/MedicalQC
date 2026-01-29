@@ -29,7 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 dicom = ["pydicom>=2.4"]
 dev = [
-  "black>=24.1",
+  "black==26.1.0",
   "ruff>=0.3",
   "isort>=5.13",
   "mypy>=1.7",
@@ -43,16 +43,18 @@ where = ["src"]
 include = ["src", "src.*"]
 
 [tool.black]
-line-length = 100
-required-version = "24.1.0"
+line-length = 88
+required-version = "26.1.0"
 
 [tool.isort]
 profile = "black"
-line_length = 100
+line_length = 88
 known_first_party = ["src"]
 
 [tool.ruff]
-line-length = 100
+line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B", "SIM"]
 ignore = ["E501"]
 

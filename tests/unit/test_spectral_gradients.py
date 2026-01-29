@@ -8,7 +8,9 @@ class TinyModel(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.img_proj = nn.Linear(4, 8)
-        self.spec = SpectralEncoder(SpectralConfig(out_dim=8, mode="radial", target_size=16))
+        self.spec = SpectralEncoder(
+            SpectralConfig(out_dim=8, mode="radial", target_size=16)
+        )
         self.fusion = Fusion(8, 8, 8, mode="gated", dropout=0.0)
         self.head = nn.Linear(8, 1)
 

@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Dict, Tuple
-
 import numpy as np
 
 
-def roc_curve(y_true: np.ndarray, y_score: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def roc_curve(y_true: np.ndarray, y_score: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     order = np.argsort(-y_score)
     y_true = y_true[order]
     positives = y_true.sum()
@@ -24,7 +22,7 @@ def auroc(y_true: np.ndarray, y_score: np.ndarray) -> float:
     return float(np.trapz(tpr, fpr))
 
 
-def pr_curve(y_true: np.ndarray, y_score: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def pr_curve(y_true: np.ndarray, y_score: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     order = np.argsort(-y_score)
     y_true = y_true[order]
     tps = np.cumsum(y_true)
@@ -60,7 +58,9 @@ def specificity_at_sensitivity(
     return float(1 - fpr[idx[-1]])
 
 
-def confusion_matrix(y_true: np.ndarray, y_prob: np.ndarray, thresh: float = 0.5) -> Dict[str, int]:
+def confusion_matrix(
+    y_true: np.ndarray, y_prob: np.ndarray, thresh: float = 0.5
+) -> dict[str, int]:
     pred = (y_prob >= thresh).astype(int)
     tp = int(((pred == 1) & (y_true == 1)).sum())
     tn = int(((pred == 0) & (y_true == 0)).sum())
@@ -74,10 +74,14 @@ def compute_metrics(
     y_score: np.ndarray,
     specificity_target: float = 0.95,
     sensitivity_target: float = 0.8,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     return {
         "auroc": auroc(y_true, y_score),
         "auprc": auprc(y_true, y_score),
-        "sensitivity_at_spec": sensitivity_at_specificity(y_true, y_score, specificity_target),
-        "specificity_at_sens": specificity_at_sensitivity(y_true, y_score, sensitivity_target),
+        "sensitivity_at_spec": sensitivity_at_specificity(
+            y_true, y_score, specificity_target
+        ),
+        "specificity_at_sens": specificity_at_sensitivity(
+            y_true, y_score, sensitivity_target
+        ),
     }

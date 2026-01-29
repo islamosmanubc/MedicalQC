@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterator, List
+from collections.abc import Iterator
 
 from torch.utils.data import Sampler
 
@@ -10,7 +10,7 @@ from torch.utils.data import Sampler
 class FederatedClientSampler(Sampler[int]):
     """Sampler yielding indices for a specific hospital."""
 
-    def __init__(self, indices: List[int], shuffle: bool = True, seed: int = 0) -> None:
+    def __init__(self, indices: list[int], shuffle: bool = True, seed: int = 0) -> None:
         self.indices = indices
         self.shuffle = shuffle
         self.seed = seed
@@ -36,7 +36,7 @@ class _SimpleRng:
         self.state = (1103515245 * self.state + 12345) & 0x7FFFFFFF
         return self.state / 0x7FFFFFFF
 
-    def shuffle(self, data: List[int]) -> None:
+    def shuffle(self, data: list[int]) -> None:
         for i in range(len(data) - 1, 0, -1):
             j = int(self.rand() * (i + 1))
             data[i], data[j] = data[j], data[i]

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import torch
 from torch import nn
@@ -25,7 +24,9 @@ class AttentionMILPool(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-    def forward(self, embeddings: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, embeddings: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         # embeddings: [B, S, D]
         if embeddings.dim() != 3:
             raise ValueError("embeddings must be [B, S, D]")
@@ -51,7 +52,9 @@ class WorstSliceTopK(nn.Module):
         self.k = k
         self.scorer = nn.Linear(in_dim, 1)
 
-    def forward(self, embeddings: torch.Tensor, mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self, embeddings: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> torch.Tensor:
         # embeddings: [B, S, D]
         if embeddings.dim() != 3:
             raise ValueError("embeddings must be [B, S, D]")
@@ -106,7 +109,9 @@ class HybridStudyAggregator(nn.Module):
         else:
             self.logit_head = nn.Linear(cfg.in_dim, 1)
 
-    def forward(self, embeddings: torch.Tensor, mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+    def forward(
+        self, embeddings: torch.Tensor, mask: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
         attn_emb, attn_weights = self.attn_pool(embeddings, mask)
         topk_logits = self.topk_pool(embeddings, mask).unsqueeze(-1)
 
@@ -114,9 +119,15 @@ class HybridStudyAggregator(nn.Module):
             emb = self.attn_proj(attn_emb)
             topk_emb = self.topk_proj(topk_logits)
             fused = self.cfg.alpha * emb + (1 - self.cfg.alpha) * topk_emb
-            return fused, {"attn_weights": attn_weights, "topk_logits": topk_logits.squeeze(-1)}
+            return fused, {
+                "attn_weights": attn_weights,
+                "topk_logits": topk_logits.squeeze(-1),
+            }
 
         # logit-level fusion
         attn_logit = self.logit_head(attn_emb)
         fused_logit = self.cfg.alpha * attn_logit + (1 - self.cfg.alpha) * topk_logits
-        return fused_logit.squeeze(-1), {"attn_weights": attn_weights, "topk_logits": topk_logits.squeeze(-1)}
+        return fused_logit.squeeze(-1), {
+            "attn_weights": attn_weights,
+            "topk_logits": topk_logits.squeeze(-1),
+        }

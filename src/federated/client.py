@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import torch
 from torch import nn
@@ -36,27 +35,31 @@ class FederatedClient:
         self.cfg = cfg
         self.scaler = GradScaler(enabled=cfg.mixed_precision)
 
-    def get_shared_state(self) -> Dict[str, torch.Tensor]:
+    def get_shared_state(self) -> dict[str, torch.Tensor]:
         if hasattr(self.model, "shared_state_dict"):
-            return {k: v.detach().cpu() for k, v in self.model.shared_state_dict().items()}
+            return {
+                k: v.detach().cpu() for k, v in self.model.shared_state_dict().items()
+            }
         return {k: v.detach().cpu() for k, v in self.model.state_dict().items()}
 
-    def get_private_state(self) -> Dict[str, torch.Tensor]:
+    def get_private_state(self) -> dict[str, torch.Tensor]:
         if hasattr(self.model, "private_state_dict"):
-            return {k: v.detach().cpu() for k, v in self.model.private_state_dict().items()}
+            return {
+                k: v.detach().cpu() for k, v in self.model.private_state_dict().items()
+            }
         return {}
 
-    def load_shared_state(self, state: Dict[str, torch.Tensor]) -> None:
+    def load_shared_state(self, state: dict[str, torch.Tensor]) -> None:
         if hasattr(self.model, "load_shared_state_dict"):
             self.model.load_shared_state_dict(state)
         else:
             self.model.load_state_dict(state, strict=False)
 
-    def load_private_state(self, state: Dict[str, torch.Tensor]) -> None:
+    def load_private_state(self, state: dict[str, torch.Tensor]) -> None:
         if hasattr(self.model, "load_private_state_dict"):
             self.model.load_private_state_dict(state)
 
-    def train(self) -> Dict[str, float]:
+    def train(self) -> dict[str, float]:
         self.model.to(self.device)
         self.model.train()
         optimizer = torch.optim.AdamW(
@@ -80,7 +83,9 @@ class FederatedClient:
                 self.scaler.scale(loss).backward()
                 if self.cfg.grad_clip_norm is not None:
                     self.scaler.unscale_(optimizer)
-                    nn.utils.clip_grad_norm_(self.model.parameters(), self.cfg.grad_clip_norm)
+                    nn.utils.clip_grad_norm_(
+                        self.model.parameters(), self.cfg.grad_clip_norm
+                    )
                 self.scaler.step(optimizer)
                 self.scaler.update()
                 total_loss += float(loss.detach().cpu())
@@ -88,8 +93,10 @@ class FederatedClient:
         return {"train_loss": total_loss / max(steps, 1)}
 
 
-def _move_batch(batch: Dict[str, torch.Tensor], device: torch.device) -> Dict[str, torch.Tensor]:
-    moved: Dict[str, torch.Tensor] = {}
+def _move_batch(
+    batch: dict[str, torch.Tensor], device: torch.device
+) -> dict[str, torch.Tensor]:
+    moved: dict[str, torch.Tensor] = {}
     for key, value in batch.items():
         if torch.is_tensor(value):
             moved[key] = value.to(device)

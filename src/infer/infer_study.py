@@ -6,12 +6,17 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import torch
 
-from src.data.datasets import PreprocessConfig, SamplingConfig, StudyFolderDataset, collate_mil
-from src.models.qc_model import QCModelConfig, QCFederatedMILModel
+from src.data.datasets import (
+    PreprocessConfig,
+    SamplingConfig,
+    StudyFolderDataset,
+    collate_mil,
+)
+from src.models.qc_model import QCFederatedMILModel, QCModelConfig
 from src.models.spectral import SpectralConfig
 from src.utils.logging import configure_logging, get_logger
 
@@ -20,7 +25,7 @@ def infer_study(
     study_path: Path,
     model_path: Path,
     device: str = "cpu",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     logger = get_logger("infer")
     if not study_path.exists():
         raise FileNotFoundError(f"Study path not found: {study_path}")
@@ -66,7 +71,9 @@ def infer_study(
     _validate_batch(batch)
 
     with torch.no_grad():
-        batch = {k: (v.to(device) if torch.is_tensor(v) else v) for k, v in batch.items()}
+        batch = {
+            k: (v.to(device) if torch.is_tensor(v) else v) for k, v in batch.items()
+        }
         outputs = model(batch)
 
     p_fail = float(outputs["p_fail"].item())
@@ -99,7 +106,7 @@ def _decision(p_fail: float, u: float, t_fail: float = 0.5, t_u: float = 0.4) ->
     return "PASS"
 
 
-def _validate_batch(batch: Dict[str, Any]) -> None:
+def _validate_batch(batch: dict[str, Any]) -> None:
     if "slices" not in batch:
         raise ValueError("Batch missing 'slices'")
     x = batch["slices"]

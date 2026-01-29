@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence
 
 import matplotlib
 
@@ -43,7 +43,7 @@ def plot_pr(y_true: np.ndarray, y_score: np.ndarray, path: Path) -> Path:
     return path
 
 
-def plot_reliability(diagram: Dict[str, List[float]], path: Path) -> Path:
+def plot_reliability(diagram: dict[str, list[float]], path: Path) -> Path:
     bins = diagram["bin_edges"]
     acc = diagram["bin_acc"]
     conf = diagram["bin_conf"]
@@ -63,7 +63,9 @@ def plot_reliability(diagram: Dict[str, List[float]], path: Path) -> Path:
     return path
 
 
-def plot_metric_curves(history: Sequence[Dict[str, float]], keys: Iterable[str], path: Path) -> Path:
+def plot_metric_curves(
+    history: Sequence[dict[str, float]], keys: Iterable[str], path: Path
+) -> Path:
     fig, ax = plt.subplots()
     x = list(range(len(history)))
     for key in keys:
@@ -101,7 +103,7 @@ def plot_topk_slices_grid(slices: np.ndarray, topk: Sequence[int], path: Path) -
     fig, axes = plt.subplots(1, k, figsize=(k * 2.5, 2.5))
     if k == 1:
         axes = [axes]
-    for ax, idx in zip(axes, topk):
+    for ax, idx in zip(axes, topk, strict=False):
         img = slices[idx]
         if img.shape[0] == 1:
             ax.imshow(img[0], cmap="gray")

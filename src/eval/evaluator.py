@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -13,7 +12,13 @@ from torch.utils.data import DataLoader
 
 from src.eval.metrics import compute_metrics, confusion_matrix
 from src.models.uncertainty import reliability_diagram
-from src.utils.plots import plot_attention_bar, plot_pr, plot_reliability, plot_roc, plot_topk_slices_grid
+from src.utils.plots import (
+    plot_attention_bar,
+    plot_pr,
+    plot_reliability,
+    plot_roc,
+    plot_topk_slices_grid,
+)
 
 
 @dataclass(frozen=True)
@@ -25,11 +30,11 @@ class EvalConfig:
 
 def evaluate_model(
     model: torch.nn.Module, loader: DataLoader, cfg: EvalConfig
-) -> Tuple[Dict[str, float], List[Path]]:
+) -> tuple[dict[str, float], list[Path]]:
     model.eval()
-    y_true: List[float] = []
-    y_prob: List[float] = []
-    attention: List[np.ndarray] = []
+    y_true: list[float] = []
+    y_prob: list[float] = []
+    attention: list[np.ndarray] = []
     first_slices = None
     first_attn = None
 
@@ -56,7 +61,7 @@ def evaluate_model(
         sensitivity_target=cfg.sensitivity_target,
     )
 
-    artifacts: List[Path] = []
+    artifacts: list[Path] = []
     output_dir = Path(cfg.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -78,7 +83,9 @@ def evaluate_model(
     if attention:
         mean_attn = np.mean(np.concatenate(attention, axis=0), axis=0).tolist()
         attn_path = output_dir / "attention_summary.json"
-        attn_path.write_text(json.dumps({"mean_attention": mean_attn}, indent=2), encoding="utf-8")
+        attn_path.write_text(
+            json.dumps({"mean_attention": mean_attn}, indent=2), encoding="utf-8"
+        )
         artifacts.append(attn_path)
 
     if first_attn is not None:
@@ -87,13 +94,19 @@ def evaluate_model(
         artifacts.append(plot_attention_bar(attn_vec, output_dir / "attention_bar.png"))
         if first_slices is not None:
             topk = np.argsort(-attn_vec)[: min(5, len(attn_vec))].tolist()
-            artifacts.append(plot_topk_slices_grid(first_slices[0], topk, output_dir / "topk_slices.png"))
+            artifacts.append(
+                plot_topk_slices_grid(
+                    first_slices[0], topk, output_dir / "topk_slices.png"
+                )
+            )
 
     return metrics, artifacts
 
 
-def _move_batch(batch: Dict[str, torch.Tensor], device: torch.device) -> Dict[str, torch.Tensor]:
-    moved: Dict[str, torch.Tensor] = {}
+def _move_batch(
+    batch: dict[str, torch.Tensor], device: torch.device
+) -> dict[str, torch.Tensor]:
+    moved: dict[str, torch.Tensor] = {}
     for key, value in batch.items():
         if torch.is_tensor(value):
             moved[key] = value.to(device)

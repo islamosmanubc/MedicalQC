@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 
@@ -13,13 +13,13 @@ app = FastAPI(title="MedicalQC Inference")
 
 
 @app.get("/health")
-def health() -> Dict[str, str]:
+def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
 @app.post("/infer")
-def infer(study_path: str, model_path: str, device: str = "cpu") -> Dict[str, Any]:
+def infer(study_path: str, model_path: str, device: str = "cpu") -> dict[str, Any]:
     try:
         return infer_study(Path(study_path), Path(model_path), device)
     except Exception as exc:  # pragma: no cover - service stub
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

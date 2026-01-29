@@ -1,7 +1,7 @@
 import torch
 
 from src.models.lora import LoraConfig
-from src.models.qc_model import QCModelConfig, QCFederatedMILModel
+from src.models.qc_model import QCFederatedMILModel, QCModelConfig
 from src.models.spectral import SpectralConfig
 
 

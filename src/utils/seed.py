@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import random
+from contextlib import suppress
 
 import numpy as np
 import torch
@@ -18,7 +19,5 @@ def set_global_seed(seed: int, deterministic: bool = True) -> None:
     if deterministic:
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-        try:
+        with suppress(Exception):
             torch.use_deterministic_algorithms(True)
-        except Exception:
-            pass

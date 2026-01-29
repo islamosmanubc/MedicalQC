@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 from src.models.lora import LoraConfig
 from src.models.qc_model import QCModelConfig
@@ -21,10 +20,10 @@ class DataConfig:
     seed: int = 7
     num_workers: int = 0
     pin_memory: bool = True
-    sampling_max_slices: Optional[int] = None
+    sampling_max_slices: int | None = None
     sampling_strategy: str = "uniform"
-    ct_window_level: Optional[float] = None
-    ct_window_width: Optional[float] = None
+    ct_window_level: float | None = None
+    ct_window_width: float | None = None
     mri_norm: bool = True
 
 
@@ -46,7 +45,7 @@ class FederatedConfig:
     num_clients: int = 3
     rounds: int = 3
     local_epochs: int = 1
-    holdout_clients: List[int] = field(default_factory=lambda: [2])
+    holdout_clients: list[int] = field(default_factory=lambda: [2])
 
 
 @dataclass
@@ -73,7 +72,7 @@ class ModelConfig:
     pretrained: bool = False
     in_channels: int = 1
     embed_dim: int = 64
-    lora: Optional[LoraConfig] = None
+    lora: LoraConfig | None = None
     spectral: SpectralConfig = SpectralConfig()
     fusion_mode: str = "concat_mlp"
     fusion_dim: int = 32
@@ -81,7 +80,7 @@ class ModelConfig:
     dropout: float = 0.1
     uncertainty_mode: str = "none"
     return_ci: bool = False
-    expected_modality: Optional[str] = None
+    expected_modality: str | None = None
     freeze_backbone: bool = False
     train_adapters_only: bool = False
 

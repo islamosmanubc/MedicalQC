@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
-
+import timm
 import torch
 from torch import nn
-
-import timm
 
 from src.models.lora import (
     LoraConfig,
@@ -26,8 +23,8 @@ class SwinEncoder(nn.Module):
         name: str = "swin_tiny_patch4_window7_224",
         pretrained: bool = False,
         in_channels: int = 1,
-        embed_dim: Optional[int] = None,
-        lora: Optional[LoraConfig] = None,
+        embed_dim: int | None = None,
+        lora: LoraConfig | None = None,
     ) -> None:
         super().__init__()
         if in_channels <= 0:
@@ -38,7 +35,11 @@ class SwinEncoder(nn.Module):
         out_dim = embed_dim or self.backbone_dim
         if out_dim <= 0:
             raise ValueError("embed_dim must be > 0")
-        self.proj = nn.Identity() if out_dim == self.backbone_dim else nn.Linear(self.backbone_dim, out_dim)
+        self.proj = (
+            nn.Identity()
+            if out_dim == self.backbone_dim
+            else nn.Linear(self.backbone_dim, out_dim)
+        )
         self.out_dim = out_dim
         self.lora_config = lora
         if lora is not None:
@@ -46,7 +47,7 @@ class SwinEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         features = self.backbone.forward_features(x)
-        if isinstance(features, (tuple, list)):
+        if isinstance(features, tuple | list):
             features = features[0]
         if features.ndim == 4:
             features = features.mean(dim=(2, 3))
@@ -54,16 +55,16 @@ class SwinEncoder(nn.Module):
             features = features.mean(dim=1)
         return self.proj(features)
 
-    def shared_state_dict(self) -> Dict[str, torch.Tensor]:
+    def shared_state_dict(self) -> dict[str, torch.Tensor]:
         return shared_state_dict(self.state_dict())
 
-    def private_state_dict(self) -> Dict[str, torch.Tensor]:
+    def private_state_dict(self) -> dict[str, torch.Tensor]:
         return private_state_dict(self.state_dict())
 
-    def load_private_state_dict(self, lora_state: Dict[str, torch.Tensor]) -> None:
+    def load_private_state_dict(self, lora_state: dict[str, torch.Tensor]) -> None:
         load_private_state_dict(self, lora_state)
 
-    def load_shared_state_dict(self, state: Dict[str, torch.Tensor]) -> None:
+    def load_shared_state_dict(self, state: dict[str, torch.Tensor]) -> None:
         for key in state:
             if key.endswith("lora_A") or key.endswith("lora_B"):
                 raise ValueError("Shared state dict contains LoRA parameters")

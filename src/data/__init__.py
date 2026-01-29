@@ -1,5 +1,11 @@
 """Exports for data utilities."""
 
+from src.data.datamodule import (
+    DataConfig,
+    LoaderConfig,
+    build_dataloader_for_hospital,
+    build_dataloader_global,
+)
 from src.data.datasets import (
     PreprocessConfig,
     SamplingConfig,
@@ -7,7 +13,6 @@ from src.data.datasets import (
     ToyStudyDataset,
     collate_mil,
 )
-from src.data.datamodule import DataConfig, LoaderConfig, build_dataloader_for_hospital, build_dataloader_global
 from src.data.samplers import FederatedClientSampler
 
 __all__ = [

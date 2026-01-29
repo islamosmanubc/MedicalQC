@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import os
 import platform
-from typing import Any, Dict
+from typing import Any
 
 import torch
 
 
-def collect_env_info() -> Dict[str, Any]:
+def collect_env_info() -> dict[str, Any]:
     return {
         "python_version": platform.python_version(),
         "platform": platform.platform(),

@@ -4,7 +4,12 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from src.data.datasets import PreprocessConfig, SamplingConfig, StudyFolderDataset, collate_mil
+from src.data.datasets import (
+    PreprocessConfig,
+    SamplingConfig,
+    StudyFolderDataset,
+    collate_mil,
+)
 
 
 def _write_study(root: Path, hospital: str, study: str, num_slices: int) -> None:

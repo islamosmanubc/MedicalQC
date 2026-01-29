@@ -29,7 +29,9 @@ def test_plot_functions_save(tmp_path):
         {"train_loss": 1.0, "holdout_auroc": 0.5},
         {"train_loss": 0.8, "holdout_auroc": 0.6},
     ]
-    curve_path = plot_metric_curves(history, ["train_loss", "holdout_auroc"], tmp_path / "curve.png")
+    curve_path = plot_metric_curves(
+        history, ["train_loss", "holdout_auroc"], tmp_path / "curve.png"
+    )
 
     attn = np.array([0.1, 0.2, 0.7])
     attn_path = plot_attention_bar(attn, tmp_path / "attn.png")

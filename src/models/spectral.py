@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 @dataclass(frozen=True)
@@ -15,7 +14,7 @@ class SpectralConfig:
     out_dim: int = 128
     mode: str = "radial"  # radial | fft2d
     target_size: int = 224
-    radial_bins: Optional[int] = None
+    radial_bins: int | None = None
     fft_grid: int = 16
     log_scale: bool = True
 
@@ -38,8 +37,12 @@ class SpectralEncoder(nn.Module):
             if bins <= 0:
                 raise ValueError("radial_bins must be > 0")
             self.radial_bins = bins
-            self.register_buffer("_radial_index", _build_radial_index(cfg.target_size, bins))
-            self.proj = nn.Identity() if bins == cfg.out_dim else nn.Linear(bins, cfg.out_dim)
+            self.register_buffer(
+                "_radial_index", _build_radial_index(cfg.target_size, bins)
+            )
+            self.proj = (
+                nn.Identity() if bins == cfg.out_dim else nn.Linear(bins, cfg.out_dim)
+            )
         else:
             self.radial_bins = None
             self.register_buffer("_radial_index", torch.zeros(1, dtype=torch.long))
@@ -69,7 +72,9 @@ class SpectralEncoder(nn.Module):
             mag = torch.log1p(mag)
 
         if self.cfg.mode == "radial":
-            features = _radial_pool(mag, self._radial_index, self.radial_bins or self.cfg.out_dim)
+            features = _radial_pool(
+                mag, self._radial_index, self.radial_bins or self.cfg.out_dim
+            )
         else:
             features = _fft2d_pool(mag, self.fft_grid)
 
@@ -111,7 +116,9 @@ class Fusion(nn.Module):
             self.gate = nn.Linear(img_dim + spec_dim, out_dim)
             self.dropout = nn.Dropout(dropout)
         else:
-            self.img_proj = nn.Identity() if img_dim == out_dim else nn.Linear(img_dim, out_dim)
+            self.img_proj = (
+                nn.Identity() if img_dim == out_dim else nn.Linear(img_dim, out_dim)
+            )
             self.spec_proj = nn.Linear(spec_dim, out_dim)
 
     def forward(self, e_img: torch.Tensor, e_spec: torch.Tensor) -> torch.Tensor:
@@ -160,7 +167,9 @@ def _build_radial_index(size: int, bins: int) -> torch.Tensor:
     return idx
 
 
-def _radial_pool(mag: torch.Tensor, radial_idx: torch.Tensor, bins: int) -> torch.Tensor:
+def _radial_pool(
+    mag: torch.Tensor, radial_idx: torch.Tensor, bins: int
+) -> torch.Tensor:
     # mag: [N, 1, H, W2]
     n = mag.shape[0]
     flat = mag.squeeze(1).reshape(n, -1)
